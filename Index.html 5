@@ -1,0 +1,371 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pink Tic Tac Toe ✨</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  color: #604768;
+  background: linear-gradient(135deg, #ffe0ef, #e5ddff, #d9f7f1);
+}
+
+.container {
+  width: 100%;
+  max-width: 390px;
+  text-align: center;
+  padding: 28px 20px;
+  border-radius: 28px;
+  background: rgba(255,255,255,0.72);
+  box-shadow: 0 15px 45px #9f7bb533;
+  border: 1px solid white;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #a28aa9;
+  margin-bottom: 23px;
+  font-size: 13px;
+}
+
+.modes {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 20px;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.mode {
+  flex: 1;
+  padding: 12px 5px;
+  border: none;
+  border-radius: 12px;
+  background: #f5eafa;
+  color: #8a6a99;
+  font-weight: bold;
+}
+
+.mode.selected {
+  background: #b783d1;
+  color: white;
+}
+
+#message {
+  min-height: 45px;
+  padding: 14px 5px;
+  margin-bottom: 15px;
+  background: #fff0f7;
+  border-radius: 13px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.square {
+  height: auto;
+  aspect-ratio: 1;
+  border: 2px solid #f3e7fa;
+  border-radius: 17px;
+  background: white;
+  font-size: 42px;
+  font-weight: bold;
+  box-shadow: 0 5px 12px #b783d11c;
+  transition: .2s;
+}
+
+.square:hover:not(:disabled) {
+  transform: translateY(-3px);
+  background: #fff5fb;
+}
+
+.square.x {
+  color: #ed80ac;
+}
+
+.square.o {
+  color: #9b86e8;
+}
+
+.square.winner {
+  background: #d9f8e8;
+  border-color: #a9e9c6;
+}
+
+.scores {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 22px;
+  padding: 14px 5px;
+  background: #fbf5ff;
+  border-radius: 15px;
+}
+
+.scores span {
+  font-size: 12px;
+  color: #9b84a5;
+}
+
+.scores b {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 22px;
+  color: #795e91;
+}
+
+.reset {
+  width: 100%;
+  padding: 14px;
+  margin-top: 18px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #ed9cc2, #b69bea);
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.reset:hover {
+  filter: brightness(1.04);
+}
+
+footer {
+  margin-top: 20px;
+  font-size: 11px;
+  color: #b19bb8;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <h1>🎀 Tic Tac Toe</h1>
+  <p class="subtitle">Play, smile & repeat ✨</p>
+
+  <div class="modes">
+    <button class="mode selected" id="ai">🤖 Vs Computer</button>
+    <button class="mode" id="two">👭 Two Players</button>
+  </div>
+
+  <div id="message" aria-live="polite">Your turn! 🌸</div>
+
+  <div class="board" id="board">
+    <button class="square" data-index="0"></button>
+    <button class="square" data-index="1"></button>
+    <button class="square" data-index="2"></button>
+    <button class="square" data-index="3"></button>
+    <button class="square" data-index="4"></button>
+    <button class="square" data-index="5"></button>
+    <button class="square" data-index="6"></button>
+    <button class="square" data-index="7"></button>
+    <button class="square" data-index="8"></button>
+  </div>
+
+  <div class="scores">
+    <span><b id="xs">0</b>PLAYER X</span>
+    <span><b id="ds">0</b>DRAWS</span>
+    <span><b id="os">0</b>PLAYER O</span>
+  </div>
+
+  <button class="reset" id="reset">↻ New Game</button>
+
+  <footer>MADE WITH LOVE ♡</footer>
+</div>
+
+<script>
+const squares = [...document.querySelectorAll(".square")];
+const message = document.getElementById("message");
+
+const winningLines = [
+  [0,1,2], [3,4,5], [6,7,8],
+  [0,3,6], [1,4,7], [2,5,8],
+  [0,4,8], [2,4,6]
+];
+
+let cells = Array(9).fill("");
+let turn = "X";
+let againstComputer = true;
+let ended = false;
+let scores = { X: 0, O: 0, D: 0 };
+
+function getWinner(arr) {
+  return winningLines.find(line =>
+    arr[line[0]] &&
+    arr[line[0]] === arr[line[1]] &&
+    arr[line[1]] === arr[line[2]]
+  );
+}
+
+function update() {
+  squares.forEach((square, i) => {
+    square.textContent = cells[i];
+    square.className = "square";
+    if (cells[i]) square.classList.add(cells[i].toLowerCase());
+
+    square.disabled = ended || cells[i] !== "" ||
+      (againstComputer && turn === "O");
+  });
+
+  document.getElementById("xs").textContent = scores.X;
+  document.getElementById("os").textContent = scores.O;
+  document.getElementById("ds").textContent = scores.D;
+}
+
+function checkEnd() {
+  const line = getWinner(cells);
+
+  if (line) {
+    ended = true;
+    line.forEach(i => squares[i].classList.add("winner"));
+    scores[cells[line[0]]]++;
+
+    message.textContent =
+      againstComputer
+        ? (turn === "X" ? "You win! 🌷🎉" : "Computer wins! 💜")
+        : `Player ${turn} wins! 🎉`;
+
+    update();
+    return true;
+  }
+
+  if (cells.every(Boolean)) {
+    ended = true;
+    scores.D++;
+    message.textContent = "It's a draw! 🤍";
+    update();
+    return true;
+  }
+
+  return false;
+}
+
+// Computer searches for winning moves and blocks yours.
+function computerPlay() {
+  if (ended || !againstComputer) return;
+
+  let move = findMove("O");
+
+  if (move === -1) move = findMove("X");
+
+  if (move === -1 && cells[4] === "") move = 4;
+
+  if (move === -1) {
+    const corners = [0, 2, 6, 8].filter(i => cells[i] === "");
+    if (corners.length) {
+      move = corners[Math.floor(Math.random() * corners.length)];
+    }
+  }
+
+  if (move === -1) {
+    const empty = cells.map((v, i) => v === "" ? i : -1)
+      .filter(i => i !== -1);
+    if (empty.length) {
+      move = empty[Math.floor(Math.random() * empty.length)];
+    }
+  }
+
+  if (move !== -1) {
+    cells[move] = "O";
+    turn = "O";
+    if (checkEnd()) return;
+  }
+
+  turn = "X";
+  message.textContent = "Your turn! 🌸";
+  update();
+}
+
+function findMove(player) {
+  for (let i = 0; i < 9; i++) {
+    if (cells[i] !== "") continue;
+
+    cells[i] = player;
+    const wins = getWinner(cells);
+    cells[i] = "";
+
+    if (wins) return i;
+  }
+  return -1;
+}
+
+function play(i) {
+  if (ended || cells[i] !== "") return;
+  if (againstComputer && turn === "O") return;
+
+  cells[i] = turn;
+
+  if (checkEnd()) return;
+
+  if (againstComputer) {
+    turn = "O";
+    message.textContent = "Computer is thinking... 🤖";
+    update();
+    setTimeout(computerPlay, 350);
+  } else {
+    turn = turn === "X" ? "O" : "X";
+    message.textContent = `Player ${turn}'s turn!`;
+    update();
+  }
+}
+
+function newGame() {
+  cells = Array(9).fill("");
+  turn = "X";
+  ended = false;
+  message.textContent = againstComputer
+    ? "Your turn! 🌸"
+    : "Player X starts! 💗";
+  update();
+}
+
+squares.forEach((square, i) => {
+  square.addEventListener("click", () => play(i));
+});
+
+document.getElementById("ai").onclick = () => {
+  againstComputer = true;
+  document.getElementById("ai").classList.add("selected");
+  document.getElementById("two").classList.remove("selected");
+  newGame();
+};
+
+document.getElementById("two").onclick = () => {
+  againstComputer = false;
+  document.getElementById("two").classList.add("selected");
+  document.getElementById("ai").classList.remove("selected");
+  newGame();
+};
+
+document.getElementById("reset").onclick = newGame;
+
+update();
+</script>
+</body>
+</html>
